@@ -1,7 +1,7 @@
 version: "3"
 services:
   qinglong:
-    image: whyour/qinglong:latest
+    image: ghcr.io/whyour/qinglong:2.11.3
     container_name: qinglong
     hostname: qinglong
     restart: unless-stopped
