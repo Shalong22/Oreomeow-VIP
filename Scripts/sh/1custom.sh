@@ -9,7 +9,7 @@ bot_json=$dir_config/bot.json
 
 # 下载 sync.sh
 dl_sync_shell() {
-    curl -sfL https://raw.githubusercontent.com/kiddin9/Oreomeow-VIP/main/Scripts/sh/sync.sh -o $config_sync_path
+    curl -sfL https://raw.githubusercontent.com/Shalong22/Oreomeow-VIP/main/Scripts/sh/sync.sh -o $config_sync_path
     # 判断是否下载成功
     update_size=$(ls -l $config_sync_path | awk '{print $5}')
     if (( $(echo "${update_size} < 100" | bc -l) )); then
