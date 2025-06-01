@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 ## 本脚本搬运并模仿 liuqitoday
-dir_config=/ql/data/config
-dir_script=/ql/data/scripts
-dir_repo=/ql/data/repo
+dir_config=/ql/config
+dir_script=/ql/scripts
+dir_repo=/ql/repo
 config_sync_path=$dir_config/sync.sh
 bot_json=$dir_config/bot.json
 
