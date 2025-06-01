@@ -6,7 +6,7 @@ new Env('自用更新');
 COMMENT
 
 ## 导入通用变量与函数
-dir_config=/ql/data/config
+dir_config=/ql/config
 
 file_config_config=$dir_config/config.sh
 file_config_update=$dir_config/Update.sh
