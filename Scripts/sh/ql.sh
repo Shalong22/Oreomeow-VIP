@@ -27,6 +27,14 @@ HAS_CONTAINER=false
 DEL_CONTAINER=true
 OLD_IMAGE_ID=""
 
+# 定义子目录路径变量（修复未定义变量错误）
+CONFIG_PATH=""
+DB_PATH=""
+REPO_PATH=""
+RAW_PATH=""
+SCRIPT_PATH=""
+LOG_PATH=""
+JBOT_PATH=""
 
 log() {
     echo -e "\e[32m\n$1 \e[0m\n"
@@ -59,7 +67,7 @@ docker_install() {
         if [ -r /etc/os-release ]; then
             lsb_dist="$(. /etc/os-release && echo "$ID")"
         fi
-        if [ $lsb_dist == "openwrt" ]; then
+        if [ "$lsb_dist" == "openwrt" ]; then
             echo "安装 docker 环境..."
             opkg update -V0
             opkg install -V0 --force-checksum --force-depends luci-app-dockerman
@@ -74,22 +82,41 @@ docker_install() {
     fi
 }
 
-#warn "来晚了,已被重拳出击,暂时不可用"
-#exit 0;
+# 关键修复函数：安全创建目录
+safe_mkdir() {
+    local dir_path="$1"
+    # 处理以破折号开头的路径
+    if [[ "${dir_path}" == -* ]]; then
+        mkdir -p -- "./${dir_path}" || cancelrun "目录创建失败: ./${dir_path}"
+    else
+        mkdir -p -- "${dir_path}" || cancelrun "目录创建失败: ${dir_path}"
+    fi
+}
+
 docker_install
 warn "降低学习成本，小白回车到底，一路默认选择"
-# 配置文件保存目录
+
+# ====================== 修复点1：安全创建目录 ======================
 echo -n -e "\e[33m一、请输入配置文件保存的绝对路径（示例：/root/ql1)，回车默认为 /opt/ql:\e[0m"
 read ql_path
 if [ -z "$ql_path" ]; then
-    mkdir -p $SHELL_FOLDER/ql
-    QL_PATH=$SHELL_FOLDER/ql
+    QL_PATH="$SHELL_FOLDER/ql"
+    safe_mkdir "$QL_PATH"
 elif [ -d "$ql_path" ]; then
-    QL_PATH=$ql_path
+    QL_PATH="$ql_path"
 else
-    mkdir -p $ql_path
-    QL_PATH=$ql_path
+    QL_PATH="$ql_path"
+    safe_mkdir "$QL_PATH"
 fi
+
+# ====================== 修复点2：定义子目录路径 ======================
+CONFIG_PATH="$QL_PATH/config"
+DB_PATH="$QL_PATH/db"
+REPO_PATH="$QL_PATH/repo"
+RAW_PATH="$QL_PATH/raw"
+SCRIPT_PATH="$QL_PATH/scripts"
+LOG_PATH="$QL_PATH/log"
+JBOT_PATH="$QL_PATH/jbot"
 
 # 检测镜像是否存在
 if [ ! -z "$(docker images -q $DOCKER_IMG_NAME:$TAG 2> /dev/null)" ]; then
@@ -125,7 +152,7 @@ input_container_name() {
     if [ -z "$container_name" ]; then
         CONTAINER_NAME="qinglong"
     else
-        CONTAINER_NAME=$container_name
+        CONTAINER_NAME="$container_name"
     fi
     check_container_name
 }
@@ -163,19 +190,20 @@ fi
 
 # 配置已经创建完成，开始执行
 log "1.开始创建配置文件目录"
-PATH_LIST=($CONFIG_PATH $DB_PATH $REPO_PATH $RAW_PATH $SCRIPT_PATH $LOG_PATH $JBOT_PATH)
-for i in ${PATH_LIST[@]}; do
-    mkdir -p $i
+# ====================== 修复点3：安全创建子目录 ======================
+PATH_LIST=("$CONFIG_PATH" "$DB_PATH" "$REPO_PATH" "$RAW_PATH" "$SCRIPT_PATH" "$LOG_PATH" "$JBOT_PATH")
+for i in "${PATH_LIST[@]}"; do
+    safe_mkdir "$i"
 done
  
-if [ $HAS_CONTAINER = true ] && [ $DEL_CONTAINER = true ]; then
+if [ "$HAS_CONTAINER" = true ] && [ "$DEL_CONTAINER" = true ]; then
     log "2.1.删除先前的容器"
     docker stop $CONTAINER_NAME >/dev/null
     docker rm $CONTAINER_NAME >/dev/null
 fi
 
-if [ $HAS_IMAGE = true ] && [ $PULL_IMAGE = true ]; then
-    if [ ! -z "$OLD_IMAGE_ID" ] && [ $HAS_CONTAINER = true ] && [ $DEL_CONTAINER = true ]; then
+if [ "$HAS_IMAGE" = true ] && [ "$PULL_IMAGE" = true ]; then
+    if [ ! -z "$OLD_IMAGE_ID" ] && [ "$HAS_CONTAINER" = true ] && [ "$DEL_CONTAINER" = true ]; then
         log "2.2.删除旧的镜像"
         docker image rm $OLD_IMAGE_ID 
     fi
@@ -216,13 +244,12 @@ if [ $? -ne 0 ] ; then
     cancelrun "** 错误：容器创建失败，请翻译以上英文报错，Google/百度尝试解决问题！"
 fi
 
-# 检查 config 文件是否存在
-if [ ! -f "$CONFIG_PATH/config.sh" ]; then
-    docker cp $CONTAINER_NAME:/ql/sample/config.sample.sh $CONFIG_PATH/config.sh
-    if [ $? -ne 0 ] ; then
-        cancelrun "** 错误：找不到配置文件！"
-    fi
- fi
+# ====================== 修复点4：安全复制配置文件 ======================
+log "3.1 复制配置文件"
+docker cp $CONTAINER_NAME:/ql/sample/config.sample.sh "$CONFIG_PATH/config.sh"
+if [ $? -ne 0 ] ; then
+    warn "** 警告：配置文件复制失败，但容器已启动"
+fi
 
 log "4.下面列出所有容器"
 docker ps
@@ -241,7 +268,7 @@ fi
 
 if [ "$port" = "2" ]; then
     log "6.用户名和密码已显示，请登录 ql/ (或 路由ip:$QL_PORT)"
-    cat $CONFIG_PATH/auth.json
+    cat "$CONFIG_PATH/auth.json" 2>/dev/null || warn "未找到认证文件"
 fi
 
 
