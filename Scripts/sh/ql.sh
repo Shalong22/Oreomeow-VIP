@@ -13,11 +13,11 @@ echo -e "\e[36m
        ▀                        ▀████▀▀                                 ▀████▀▀
 \e[0m\n"
 
-DOCKER_IMG_NAME="ghcr.io/whyour/qinglong"
+DOCKER_IMG_NAME="whyour/qinglong:2.17.9"
 QL_PATH=""
 SHELL_FOLDER="/opt"
 CONTAINER_NAME=""
-TAG="2.11.3"
+TAG="2.17.9"
 NETWORK="host"
 QL_PORT=5700
 
