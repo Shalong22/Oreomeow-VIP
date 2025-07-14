@@ -13,7 +13,7 @@ echo -e "\e[36m
        ▀                        ▀████▀▀                                 ▀████▀▀
 \e[0m\n"
 
-DOCKER_IMG_NAME="whyour/qinglong:2.17.9"
+DOCKER_IMG_NAME="ghcr.io/whyour/qinglong:2.17.9"
 QL_PATH=""
 SHELL_FOLDER="/opt"
 CONTAINER_NAME=""
